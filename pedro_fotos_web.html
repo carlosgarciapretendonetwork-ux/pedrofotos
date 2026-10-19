@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedro Fotos | Galería de Fotografía Profesional</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gold: {
+                            400: '#FBBF24',
+                            500: '#F59E0B',
+                            600: '#D97706',
+                        },
+                        darkbg: '#0F172A',
+                        cardbg: '#1E293B'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0B0F19;
+            color: #F3F4F6;
+        }
+        /* Glassmorphism effects */
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0B0F19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        /* Animations */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+        .img-card {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+        }
+        .img-card:hover {
+            transform: translateY(-4px);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-amber-500 selection:text-black">
+
+    <!-- Header / Navbar -->
+    <header class="sticky top-0 z-30 glass-nav border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- Brand Logo -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="resetFilters()">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                    <i class="fa-solid fa-camera-retro text-slate-950 text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-amber-400 bg-clip-text text-transparent">
+                        Pedro<span class="text-amber-500 font-light">Fotos</span>
+                    </h1>
+                    <p class="text-xs text-slate-400 hidden sm:block">Galería Fotográfica Profesional</p>
+                </div>
+            </div>
+
+            <!-- Header Actions -->
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <!-- Status Badge -->
+                <div id="authStatusBadge" class="hidden md:flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-800/80 text-slate-400 border border-slate-700">
+                    <span id="authDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+                    <span id="authStatusText">Modo Visitante</span>
+                </div>
+
+                <!-- Restore Default Photos Button -->
+                <button onclick="restoreDefaultGallery()" title="Restaurar Fotos de Muestra" class="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium px-3 py-2 rounded-xl border border-slate-700 text-xs sm:text-sm transition">
+                    <i class="fa-solid fa-rotate-right text-amber-400"></i>
+                    <span class="hidden sm:inline">Fotos de Muestra</span>
+                </button>
+
+                <!-- Action Button (Subir / Admin) -->
+                <button id="mainUploadBtn" onclick="handleUploadClick()" class="flex items-center space-x-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-semibold px-4 py-2 rounded-xl transition duration-200 shadow-lg shadow-amber-500/20 active:scale-95 text-xs sm:text-sm">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <span>Subir Foto</span>
+                </button>
+
+                <!-- Logout Button (Hidden initially) -->
+                <button id="logoutBtn" onclick="logout()" class="hidden p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-400 border border-slate-700 transition duration-200 text-xs sm:text-sm" title="Cerrar Sesión de Administrador">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+        
+        <!-- Hero & Intro Banner -->
+        <div class="relative rounded-3xl overflow-hidden mb-10 p-8 sm:p-12 glass border border-slate-800">
+            <div class="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-transparent to-purple-500/10 opacity-50"></div>
+            <div class="relative z-10 max-w-2xl">
+                <span class="text-amber-400 text-xs font-semibold uppercase tracking-wider px-3 py-1 bg-amber-400/10 rounded-full border border-amber-400/20">Portafolio Fotográfico</span>
+                <h2 class="text-3xl sm:text-5xl font-bold mt-4 mb-3 text-white tracking-tight">Capturando momentos inolvidables</h2>
+                <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+                    Explora y descarga la colección visual de Pedro. Fotografías de naturaleza, paisajes urbanos, retratos y viajes de alta resolución.
+                </p>
+            </div>
+        </div>
+
+        <!-- Filter & Search Controls Section -->
+        <div class="flex flex-col md:flex-row gap-4 justify-between items-center mb-8">
+            <!-- Categories Pills -->
+            <div class="flex items-center space-x-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 no-scrollbar" id="categoryFilters">
+                <button onclick="filterCategory('todos')" class="category-btn active bg-amber-500 text-slate-950 font-semibold px-4 py-2 rounded-xl text-sm whitespace-nowrap transition duration-200">
+                    Todos
+                </button>
+                <button onclick="filterCategory('Naturaleza')" class="category-btn bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-medium px-4 py-2 rounded-xl text-sm whitespace-nowrap transition duration-200 border border-slate-700">
+                    <i class="fa-solid fa-tree mr-1 text-xs"></i> Naturaleza
+                </button>
+                <button onclick="filterCategory('Retrato')" class="category-btn bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-medium px-4 py-2 rounded-xl text-sm whitespace-nowrap transition duration-200 border border-slate-700">
+                    <i class="fa-solid fa-user mr-1 text-xs"></i> Retratos
+                </button>
+                <button onclick="filterCategory('Urbana')" class="category-btn bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-medium px-4 py-2 rounded-xl text-sm whitespace-nowrap transition duration-200 border border-slate-700">
+                    <i class="fa-solid fa-city mr-1 text-xs"></i> Urbana
+                </button>
+                <button onclick="filterCategory('Viajes')" class="category-btn bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-medium px-4 py-2 rounded-xl text-sm whitespace-nowrap transition duration-200 border border-slate-700">
+                    <i class="fa-solid fa-plane mr-1 text-xs"></i> Viajes
+                </button>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="flex items-center space-x-3 w-full md:w-auto">
+                <div class="relative w-full md:w-72">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Buscar fotos..." 
+                        class="w-full pl-10 pr-4 py-2 bg-slate-800/80 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition">
+                </div>
+            </div>
+        </div>
+
+        <!-- Gallery Grid -->
+        <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Dynamic photos rendered here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-16 glass rounded-3xl border border-slate-800">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 text-2xl">
+                <i class="fa-regular fa-image"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-1">No se encontraron fotografías</h3>
+            <p class="text-slate-400 text-sm max-w-md mx-auto mb-6">Prueba con otra búsqueda o recarga la galería inicial de muestra.</p>
+            <button onclick="restoreDefaultGallery()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl text-sm transition">
+                Restaurar Galería de Muestra
+            </button>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 bg-slate-950/60 mt-16 py-8">
+        <div class="max-w-7xl mx-auto px-4 text-center sm:flex sm:justify-between sm:items-center text-slate-500 text-sm">
+            <p>© 2026 Pedro Fotos. Todos los derechos reservados.</p>
+            <p class="mt-2 sm:mt-0 text-xs">Protección de administración habilitada mediante clave segura.</p>
+        </div>
+    </footer>
+
+    <!-- MODAL 1: Authenticate / Password Form -->
+    <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md hidden transition-opacity">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative">
+            <button onclick="closeModal('authModal')" class="absolute top-5 right-5 text-slate-400 hover:text-white p-2">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center text-xl mb-4">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+
+            <h3 class="text-xl font-bold text-white mb-2">Acceso Administrador</h3>
+            <p class="text-slate-400 text-sm mb-6">Debes ingresar la contraseña correcta de Pedro Fotos para poder añadir o borrar fotografías.</p>
+
+            <form id="authForm" onsubmit="handleAuthSubmit(event)">
+                <div class="mb-4">
+                    <label class="block text-xs font-medium text-slate-300 mb-2 uppercase tracking-wider">Contraseña</label>
+                    <div class="relative">
+                        <input type="password" id="passwordInput" placeholder="Ingresa la contraseña..." 
+                            class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition">
+                        <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1">
+                            <i id="passEyeIcon" class="fa-regular fa-eye"></i>
+                        </button>
+                    </div>
+                    <!-- Error Message -->
+                    <div id="authErrorMsg" class="hidden mt-2 text-rose-400 text-xs font-medium flex items-center space-x-1">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span>Contraseña incorrecta. Inténtalo de nuevo.</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="closeModal('authModal')" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium transition">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-semibold transition">
+                        Verificar Acceso
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Upload Photo Form -->
+    <div id="uploadModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md hidden transition-opacity">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal('uploadModal')" class="absolute top-5 right-5 text-slate-400 hover:text-white p-2">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center text-xl mb-4">
+                <i class="fa-solid fa-plus"></i>
+            </div>
+
+            <h3 class="text-xl font-bold text-white mb-2">Añadir Nueva Fotografía</h3>
+            <p class="text-slate-400 text-sm mb-6">Sube una imagen desde tu dispositivo o mediante un enlace URL directo.</p>
+
+            <form id="uploadForm" onsubmit="handlePhotoUpload(event)">
+                
+                <!-- Tab selection for Upload Method -->
+                <div class="flex rounded-xl bg-slate-800 p-1 mb-5">
+                    <button type="button" id="tabUrlBtn" onclick="switchUploadTab('url')" class="flex-1 py-1.5 text-xs font-semibold rounded-lg bg-amber-500 text-slate-950 transition">
+                        URL de Imagen
+                    </button>
+                    <button type="button" id="tabFileBtn" onclick="switchUploadTab('file')" class="flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition">
+                        Archivo Local
+                    </button>
+                </div>
+
+                <!-- Method A: URL Input -->
+                <div id="uploadUrlGroup" class="mb-4">
+                    <label class="block text-xs font-medium text-slate-300 mb-2">Enlace de la imagen (URL)</label>
+                    <input type="url" id="photoUrlInput" placeholder="https://ejemplo.com/foto.jpg" 
+                        class="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 text-sm">
+                </div>
+
+                <!-- Method B: File Upload Input -->
+                <div id="uploadFileGroup" class="mb-4 hidden">
+                    <label class="block text-xs font-medium text-slate-300 mb-2">Seleccionar archivo de imagen</label>
+                    <input type="file" id="photoFileInput" accept="image/*" onchange="previewSelectedFile(event)"
+                        class="w-full text-xs text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-amber-400 hover:file:bg-slate-700 cursor-pointer">
+                    <div id="filePreviewContainer" class="mt-3 hidden">
+                        <img id="filePreviewImg" class="h-32 w-full object-cover rounded-xl border border-slate-700" src="" alt="Previsualización">
+                    </div>
+                </div>
+
+                <!-- Title Input -->
+                <div class="mb-4">
+                    <label class="block text-xs font-medium text-slate-300 mb-2">Título de la foto *</label>
+                    <input type="text" id="photoTitleInput" required placeholder="Ej. Atardecer en la Costa" 
+                        class="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 text-sm">
+                </div>
+
+                <!-- Category Input -->
+                <div class="mb-4">
+                    <label class="block text-xs font-medium text-slate-300 mb-2">Categoría</label>
+                    <select id="photoCategoryInput" class="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500 text-sm">
+                        <option value="Naturaleza">Naturaleza</option>
+                        <option value="Retrato">Retrato</option>
+                        <option value="Urbana">Urbana</option>
+                        <option value="Viajes">Viajes</option>
+                    </select>
+                </div>
+
+                <!-- Description Input -->
+                <div class="mb-6">
+                    <label class="block text-xs font-medium text-slate-300 mb-2">Descripción (Opcional)</label>
+                    <textarea id="photoDescInput" rows="3" placeholder="Detalles de la captura, cámara utilizada, ubicación..." 
+                        class="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 text-sm resize-none"></textarea>
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('uploadModal')" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium transition">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-semibold transition">
+                        Publicar Foto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: Photo Lightbox / Detail View -->
+    <div id="lightboxModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md hidden transition-opacity">
+        <div class="max-w-4xl w-full bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative flex flex-col md:flex-row max-h-[90vh]">
+            
+            <!-- Close Button -->
+            <button onclick="closeModal('lightboxModal')" class="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-slate-900/80 border border-slate-700 text-slate-300 hover:text-white flex items-center justify-center">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <!-- Image View -->
+            <div class="md:w-2/3 bg-black/60 flex items-center justify-center p-4 min-h-[280px] max-h-[60vh] md:max-h-full">
+                <img id="lightboxImg" src="" alt="Foto" class="max-h-full max-w-full object-contain rounded-lg">
+            </div>
+
+            <!-- Details Sidebar -->
+            <div class="md:w-1/3 p-6 sm:p-8 flex flex-col justify-between border-t md:border-t-0 md:border-l border-slate-800 overflow-y-auto">
+                <div>
+                    <div class="flex items-center space-x-2 mb-3">
+                        <span id="lightboxCategory" class="text-xs font-semibold px-2.5 py-1 bg-amber-500/10 text-amber-400 rounded-full border border-amber-500/20">
+                            Categoría
+                        </span>
+                        <span id="lightboxDate" class="text-xs text-slate-500">Fecha</span>
+                    </div>
+
+                    <h3 id="lightboxTitle" class="text-2xl font-bold text-white mb-3 leading-snug">Título de la foto</h3>
+                    <p id="lightboxDesc" class="text-slate-400 text-sm leading-relaxed mb-6">Descripción de la fotografía...</p>
+                </div>
+
+                <!-- Actions (Download & Delete) -->
+                <div class="pt-6 border-t border-slate-800/80 space-y-3">
+                    <!-- Download Button -->
+                    <button id="lightboxDownloadBtn" onclick="downloadCurrentPhoto()" class="w-full py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-semibold flex items-center justify-center space-x-2 transition shadow-lg shadow-amber-500/10">
+                        <i class="fa-solid fa-download"></i>
+                        <span id="downloadBtnText">Descargar Fotografía</span>
+                    </button>
+
+                    <!-- Delete Button (Only for Admin) -->
+                    <button id="deletePhotoBtn" onclick="deleteCurrentPhoto()" class="w-full py-2.5 px-4 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-sm font-semibold flex items-center justify-center space-x-2 transition">
+                        <i class="fa-regular fa-trash-can"></i>
+                        <span>Eliminar Foto</span>
+                    </button>
+                    <p id="guestNotice" class="text-xs text-slate-500 text-center mt-2">Accede como administrador con la clave para borrar fotos.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-slate-800 text-white border border-slate-700 px-5 py-3 rounded-2xl shadow-xl flex items-center space-x-3">
+            <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+            <span id="toastMsg" class="text-sm font-medium">Notificación</span>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Constants & State
+        const REQUIRED_PASS = "CCC26AAA27";
+        const USER_UPLOADS_KEY = "pedro_fotos_user_uploads_v1";
+        const AUTH_KEY = "pedro_fotos_auth_session";
+
+        let currentPhotos = [];
+        let isAuthenticated = false;
+        let activeCategory = 'todos';
+        let activeSearchQuery = '';
+        let activeLightboxId = null;
+        let uploadMethod = 'url';
+        let base64FileString = '';
+
+        // Init App
+        window.onload = function() {
+            checkAuthSession();
+            loadGalleryData();
+            renderGallery();
+        };
+
+        // Authentication Handlers
+        function checkAuthSession() {
+            const session = localStorage.getItem(AUTH_KEY);
+            if (session === 'true') {
+                isAuthenticated = true;
+            }
+            updateAuthUI();
+        }
+
+        function updateAuthUI() {
+            const badge = document.getElementById('authStatusBadge');
+            const dot = document.getElementById('authDot');
+            const text = document.getElementById('authStatusText');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const deleteBtn = document.getElementById('deletePhotoBtn');
+            const guestNotice = document.getElementById('guestNotice');
+
+            if (isAuthenticated) {
+                if(badge) badge.className = "hidden md:flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30";
+                if(dot) dot.className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse";
+                if(text) text.textContent = "Modo Edición Activado";
+                if(logoutBtn) logoutBtn.classList.remove('hidden');
+
+                if (deleteBtn) deleteBtn.classList.remove('hidden');
+                if (guestNotice) guestNotice.classList.add('hidden');
+            } else {
+                if(badge) badge.className = "hidden md:flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-800/80 text-slate-400 border border-slate-700";
+                if(dot) dot.className = "w-2 h-2 rounded-full bg-slate-500";
+                if(text) text.textContent = "Modo Visitante";
+                if(logoutBtn) logoutBtn.classList.add('hidden');
+
+                if (deleteBtn) deleteBtn.classList.add('hidden');
+                if (guestNotice) guestNotice.classList.remove('hidden');
+            }
+        }
+
+        function handleUploadClick() {
+            if (isAuthenticated) {
+                openModal('uploadModal');
+            } else {
+                openModal('authModal');
+            }
+        }
+
+        function handleAuthSubmit(e) {
+            e.preventDefault();
+            const passInput = document.getElementById('passwordInput');
+            const errorMsg = document.getElementById('authErrorMsg');
+
+            if (passInput.value === REQUIRED_PASS) {
+                isAuthenticated = true;
+                localStorage.setItem(AUTH_KEY, 'true');
+                updateAuthUI();
+                errorMsg.classList.add('hidden');
+                passInput.value = '';
+                closeModal('authModal');
+                showToast('Acceso concedido. ¡Bienvenido Pedro!', 'success');
+                
+                setTimeout(() => {
+                    openModal('uploadModal');
+                }, 300);
+            } else {
+                errorMsg.classList.remove('hidden');
+                const formBox = passInput.closest('.bg-slate-900');
+                formBox.classList.add('animate-shake');
+                setTimeout(() => formBox.classList.remove('animate-shake'), 400);
+            }
+        }
+
+        function logout() {
+            isAuthenticated = false;
+            localStorage.removeItem(AUTH_KEY);
+            updateAuthUI();
+            showToast('Sesión cerrada correctamente', 'info');
+        }
+
+        function togglePasswordVisibility() {
+            const input = document.getElementById('passwordInput');
+            const icon = document.getElementById('passEyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-regular fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-regular fa-eye';
+            }
+        }
+
+        // Gallery Data LocalStorage Handlers (Starts completely empty)
+        function loadGalleryData() {
+            const storedUserUploads = localStorage.getItem(USER_UPLOADS_KEY);
+            if (storedUserUploads) {
+                try {
+                    currentPhotos = JSON.parse(storedUserUploads);
+                } catch(e) {
+                    currentPhotos = [];
+                }
+            } else {
+                currentPhotos = [];
+            }
+        }
+
+        function saveUserUploads(userPhotos) {
+            localStorage.setItem(USER_UPLOADS_KEY, JSON.stringify(userPhotos));
+        }
+
+        function clearAllPhotos() {
+            if (!isAuthenticated) {
+                showToast('Debes ser administrador para vaciar la galería', 'error');
+                return;
+            }
+            if (confirm('¿Deseas eliminar TODAS las fotos de la galería?')) {
+                localStorage.removeItem(USER_UPLOADS_KEY);
+                loadGalleryData();
+                renderGallery();
+                showToast('Galería vaciada completamente', 'info');
+            }
+        }
+
+        // Render Gallery
+        function renderGallery() {
+            const grid = document.getElementById('galleryGrid');
+            const emptyState = document.getElementById('emptyState');
+            grid.innerHTML = '';
+
+            const filtered = currentPhotos.filter(photo => {
+                const matchesCategory = activeCategory === 'todos' || photo.category.toLowerCase() === activeCategory.toLowerCase();
+                const matchesSearch = photo.title.toLowerCase().includes(activeSearchQuery.toLowerCase()) || 
+                                      (photo.description && photo.description.toLowerCase().includes(activeSearchQuery.toLowerCase()));
+                return matchesCategory && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                filtered.forEach(photo => {
+                    const card = document.createElement('div');
+                    card.className = "img-card group relative rounded-2xl overflow-hidden glass border border-slate-800/80 bg-slate-900 flex flex-col justify-between";
+
+                    card.innerHTML = `
+                        <div class="relative aspect-square overflow-hidden bg-slate-950 cursor-pointer" onclick="openLightbox('${photo.id}')">
+                            <img src="${photo.url}" alt="${photo.title}" 
+                                class="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+                                onerror="this.onerror=null;this.src='https://placehold.co/600x600/1e293b/f59e0b?text=Imagen+no+disponible';">
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-60 group-hover:opacity-40 transition duration-300"></div>
+                            
+                            <span class="absolute top-3 left-3 text-[10px] font-semibold tracking-wider uppercase px-2.5 py-1 bg-slate-900/80 backdrop-blur-md text-amber-400 rounded-lg border border-slate-700">
+                                ${photo.category}
+                            </span>
+
+                            <!-- Direct Card Download Button -->
+                            <button onclick="event.stopPropagation(); triggerDirectDownload('${photo.url}', '${photo.title}')" 
+                                title="Descargar Fotografía"
+                                class="absolute top-3 right-3 w-9 h-9 rounded-xl bg-slate-900/80 hover:bg-amber-500 text-slate-300 hover:text-slate-950 border border-slate-700/80 hover:border-amber-400 backdrop-blur-md flex items-center justify-center transition duration-200 shadow-md">
+                                <i class="fa-solid fa-download text-xs"></i>
+                            </button>
+                        </div>
+
+                        <div class="p-4 bg-slate-900/90 flex-grow flex flex-col justify-between cursor-pointer" onclick="openLightbox('${photo.id}')">
+                            <div>
+                                <h3 class="font-semibold text-white text-base group-hover:text-amber-400 transition line-clamp-1">${photo.title}</h3>
+                                <p class="text-xs text-slate-400 mt-1 line-clamp-2">${photo.description || 'Sin descripción'}</p>
+                            </div>
+                            <div class="mt-3 pt-3 border-t border-slate-800 flex justify-between items-center text-xs text-slate-500">
+                                <span>${photo.date}</span>
+                                <span class="text-amber-500/80 group-hover:translate-x-1 transition"><i class="fa-solid fa-arrow-right"></i></span>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            }
+        }
+
+        // Download Utility Function
+        async function triggerDirectDownload(url, filenameTitle) {
+            const cleanTitle = (filenameTitle || 'pedro-foto').toLowerCase().replace(/[^a-z0-9]/gi, '-');
+            const filename = `${cleanTitle}.jpg`;
+
+            showToast('Iniciando descarga...', 'info');
+
+            // Handle Base64 Data URL directly
+            if (url.startsWith('data:')) {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showToast('Descarga completada', 'success');
+                return;
+            }
+
+            // Handle External URL via Fetch & Blob
+            try {
+                const response = await fetch(url, { mode: 'cors' });
+                if (!response.ok) throw new Error('CORS or Network error');
+                const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(blobUrl);
+                showToast('Descarga completada', 'success');
+            } catch (err) {
+                // Fallback for CORS restricted images
+                const windowRef = window.open(url, '_blank');
+                if (windowRef) {
+                    showToast('Imagen abierta en nueva pestaña para guardar', 'info');
+                } else {
+                    showToast('No se pudo descargar automáticamente. Abre la imagen directamente.', 'error');
+                }
+            }
+        }
+
+        // Download From Lightbox
+        function downloadCurrentPhoto() {
+            const photo = currentPhotos.find(p => p.id === activeLightboxId);
+            if (photo) {
+                const btnText = document.getElementById('downloadBtnText');
+                if (btnText) btnText.textContent = "Descargando...";
+                
+                triggerDirectDownload(photo.url, photo.title).finally(() => {
+                    if (btnText) btnText.textContent = "Descargar Fotografía";
+                });
+            }
+        }
+
+        // Filter and Search logic
+        function filterCategory(cat) {
+            activeCategory = cat;
+            const buttons = document.querySelectorAll('#categoryFilters .category-btn');
+            buttons.forEach(btn => {
+                if (btn.textContent.trim().toLowerCase().includes(cat.toLowerCase()) || (cat === 'todos' && btn.textContent.trim() === 'Todos')) {
+                    btn.className = "category-btn active bg-amber-500 text-slate-950 font-semibold px-4 py-2 rounded-xl text-sm whitespace-nowrap transition duration-200";
+                } else {
+                    btn.className = "category-btn bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-medium px-4 py-2 rounded-xl text-sm whitespace-nowrap transition duration-200 border border-slate-700";
+                }
+            });
+            renderGallery();
+        }
+
+        function handleSearch() {
+            activeSearchQuery = document.getElementById('searchInput').value.trim();
+            renderGallery();
+        }
+
+        function resetFilters() {
+            activeSearchQuery = '';
+            document.getElementById('searchInput').value = '';
+            filterCategory('todos');
+        }
+
+        // Upload Form Handlers
+        function switchUploadTab(method) {
+            uploadMethod = method;
+            const urlTab = document.getElementById('tabUrlBtn');
+            const fileTab = document.getElementById('tabFileBtn');
+            const urlGroup = document.getElementById('uploadUrlGroup');
+            const fileGroup = document.getElementById('uploadFileGroup');
+
+            if (method === 'url') {
+                urlTab.className = "flex-1 py-1.5 text-xs font-semibold rounded-lg bg-amber-500 text-slate-950 transition";
+                fileTab.className = "flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition";
+                urlGroup.classList.remove('hidden');
+                fileGroup.classList.add('hidden');
+            } else {
+                fileTab.className = "flex-1 py-1.5 text-xs font-semibold rounded-lg bg-amber-500 text-slate-950 transition";
+                urlTab.className = "flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition";
+                fileGroup.classList.remove('hidden');
+                urlGroup.classList.add('hidden');
+            }
+        }
+
+        function previewSelectedFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    base64FileString = e.target.result;
+                    document.getElementById('filePreviewImg').src = base64FileString;
+                    document.getElementById('filePreviewContainer').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function handlePhotoUpload(e) {
+            e.preventDefault();
+
+            let finalImgUrl = '';
+            if (uploadMethod === 'url') {
+                finalImgUrl = document.getElementById('photoUrlInput').value.trim();
+                if (!finalImgUrl) {
+                    showToast('Por favor introduce una URL válida', 'error');
+                    return;
+                }
+            } else {
+                if (!base64FileString) {
+                    showToast('Por favor selecciona un archivo de imagen', 'error');
+                    return;
+                }
+                finalImgUrl = base64FileString;
+            }
+
+            const title = document.getElementById('photoTitleInput').value.trim();
+            const category = document.getElementById('photoCategoryInput').value;
+            const description = document.getElementById('photoDescInput').value.trim();
+
+            const newPhoto = {
+                id: 'user-' + Date.now().toString(),
+                title: title,
+                category: category,
+                description: description,
+                url: finalImgUrl,
+                date: new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
+            };
+
+            currentPhotos.unshift(newPhoto);
+            saveUserUploads(currentPhotos);
+
+            renderGallery();
+
+            // Reset form
+            document.getElementById('uploadForm').reset();
+            base64FileString = '';
+            document.getElementById('filePreviewContainer').classList.add('hidden');
+            closeModal('uploadModal');
+
+            showToast('¡Fotografía publicada con éxito!', 'success');
+        }
+
+        // Lightbox Modal Handlers
+        function openLightbox(photoId) {
+            const photo = currentPhotos.find(p => p.id === photoId);
+            if (!photo) return;
+
+            activeLightboxId = photoId;
+            document.getElementById('lightboxImg').src = photo.url;
+            document.getElementById('lightboxTitle').textContent = photo.title;
+            document.getElementById('lightboxCategory').textContent = photo.category;
+            document.getElementById('lightboxDate').textContent = photo.date;
+            document.getElementById('lightboxDesc').textContent = photo.description || 'Sin descripción adicional disponible.';
+
+            updateAuthUI();
+            openModal('lightboxModal');
+        }
+
+        function deleteCurrentPhoto() {
+            if (!isAuthenticated) {
+                showToast('Inicia sesión para eliminar fotos', 'error');
+                return;
+            }
+
+            if (confirm('¿Estás seguro de que deseas eliminar esta fotografía?')) {
+                currentPhotos = currentPhotos.filter(p => p.id !== activeLightboxId);
+                saveUserUploads(currentPhotos);
+
+                renderGallery();
+                closeModal('lightboxModal');
+                showToast('Fotografía eliminada', 'info');
+            }
+        }
+
+        // General Modal Helpers
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Toast Helpers
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.textContent = message;
+
+            if (type === 'success') {
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400 text-lg";
+            } else if (type === 'error') {
+                toastIcon.className = "fa-solid fa-circle-xmark text-rose-400 text-lg";
+            } else {
+                toastIcon.className = "fa-solid fa-circle-info text-amber-400 text-lg";
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
